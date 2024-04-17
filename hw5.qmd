@@ -1,0 +1,185 @@
+---
+title: "hw5"
+author: "Jake Lang"
+format: html
+editor: visual
+embed-resources: true
+---
+
+## Introduction
+
+The idea that language comprehenders predict upcoming words is a popular theory lately. But, testing this has been difficult. This study explores whether the maze task is a useful way to study early cues to prediction during comprehension. A study was conducted using an automated maze task (A-maze). Response times and error rates were analyzed.
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(readr)
+library(readxl)
+maze <- read_csv("osfstorage-archive/data/delong maze 40Ss.csv")
+
+
+```
+
+## Codebook
+
+There are quite a few variables in this dataset, so I will include a codebook explaining them below
+
+**Time**: Date and time of when data was collected by participant
+
+**Counter**: information not included anwhere/variable not used
+
+**Hash**: Participant Identifier
+
+**Logged in as experiment owner?** : Whether or not a participant logged in as an experiment owner
+
+**Controller name** : form, question, or maze
+
+**Item number** : item number
+
+**Element number** : element number
+
+**Type :** practice or maze question
+
+**Group :**
+
+**Field name** : information type requested
+
+**Field value** : information value given
+
+**Word number** : word number in the sentence
+
+**Word** : word
+
+**Alternative** : alternative word
+
+**Word on (0 = left, 1 = right) :** location of the word
+
+**Correct** :whether answer was correct
+
+**Reading time to first answer** **:** time from reading to first answer
+
+**Sentence:** text of sentence
+
+**Total time to correct answer :** time to correct answer
+
+**Question (NULL if none):** Question if asked
+
+**Answer:** Yes/No answer
+
+**Whether or not answer was correct :** whether or not the answer was correct
+
+**Time taken to answer: ** length of time it took to answer
+
+## Number of Participants
+
+How many participants were there in the original study? It turns out the Hash value is essentially a participant id.
+
+```{r}
+number_participants <- maze |>
+  group_by(Hash) |>
+  summarise() |>
+  count()
+
+num_participants <- sum(number_participants$n)
+```
+
+There were `r num_participants` participants.
+
+## Data removed
+
+Some data in this dataset must be removed.
+
+```{r}
+orig_rows = nrow(maze)
+modified <- maze |>
+  filter(`Item number` != 29) |>
+  filter(`Correct` != 'no')
+
+num_rows <- nrow(modified)
+
+```
+
+Removed from the dataset were rows for Item 29, which was removed due to a coding error, and words with error responses. The original dataset contained `r orig_rows` rows. After the removal these, there are `r num_rows` rows in the dataset. Therefore, there were `r orig_rows - num_rows` rows removed from the dataset.
+
+## Some statistics
+
+Let's print a table showing the mean, min, max, and standard deviation of participant ages to get a better idea of the selected individuals.
+
+```{r}
+
+stats <- maze |>
+  filter(`Field name` == "age") |>
+  summarise(
+    mean_age = mean(as.numeric(`Field value`), na.rm = TRUE),
+    min_age = min(as.numeric(`Field value`), na.rm = TRUE),
+    max_age = max(as.numeric(`Field value`), na.rm = TRUE),
+    sd_age = sd(as.numeric(`Field value`), na.rm = TRUE)
+  )
+stats <- data.frame(stats)
+```
+
+Here's the data: `r stats`
+
+## Figure 1
+
+This figure shows the response times, having removed error and post-error responses. We look to see the response times for the unexpected condition and the expected condition for both the nouns and the preceding article. We would predict that the response times are slower for the unexpected conditions.
+
+```{r}
+#Create the rt dataset
+d <- read.csv("osfstorage-archive/data/delong maze 40Ss.csv",
+              header = 0, sep = ",", comment.char = "#", strip.white = T,
+              col.names = c("Index","Time","Counter","Hash","Owner","Controller","Item","Element","Type","Group","FieldName","Value","WordNum","Word","Alt","WordOn","CorrWord","RT","Sent","TotalTime","Question","Resp","Acc","RespRT"));
+
+
+rt <- d[d$Controller == "Maze" & substr(d$Type,1,4) != "prac", c(1:10,13:20)]
+rt <- separate(data = rt, col = Type, into = c("exp", "item", "expect", "position", "pos", "cloze", "art.cloze", "n.cloze"), sep = "\\.", convert = TRUE, fill = "right")
+rt <- as.data.frame(lapply(rt, function (x) if (is.factor(x) | is.character(x)) factor(x) else x))
+
+rt$WordNum <- as.numeric(as.character(rt$WordNum))
+rt$RT <- as.numeric(as.character(rt$RT))
+rt$TotalTime <- as.numeric(as.character(rt$TotalTime))
+rt$Acc <- as.numeric(as.character(recode(rt$CorrWord, yes = "1", no = "0")))
+rt$n.cloze.scale <- scale(rt$n.cloze)
+rt$art.cloze.scale <- scale(rt$art.cloze)
+rt <- rt[rt$item != 29,]
+
+
+rt.s <- rt[rt$Hash != '9dAvrH0+R6a0U5adPzZSyA',]
+
+
+rt.s$rgn.fix <- rt.s$WordNum - rt.s$pos + 1
+rt.s$word.num.z <- scale(rt.s$WordNum)
+rt.s$word.len <- nchar(as.character(rt.s$Word))
+rt.s$Altword.len <- nchar(as.character(rt.s$Alt))
+
+
+rt.s.filt <- rt.s[rt.s$Hash != "gyxidIf0fqXBM7nxg2K7SQ" & rt.s$Hash != "f8dC3CkleTBP9lUufzUOyQ",]
+
+
+rgn.rt.raw <- rt.s.filt %>% filter(rgn.fix > -4 & rgn.fix < 5) %>% filter(Acc == 1) %>% group_by(rgn.fix, expect) %>% summarize(n=n(), subj=length(unique(Hash)), rt=mean(RT), sd=sd(RT), stderr=sd/sqrt(subj)) %>% as.data.frame()
+rgn.rt.raw$rgn <- as.factor(recode(rgn.rt.raw$rgn.fix, "-3"="CW-3", "-2"="CW-2", "-1"="CW-1", "0"="art", "1"="n","2"="CW+1", "3"="CW+2", "4"="CW+3"))
+rgn.rt.raw$rgn <- ordered(rgn.rt.raw$rgn, levels = c("CW-3", "CW-2", "CW-1", "art", "n", "CW+1", "CW+2", "CW+3"))
+
+#actual plot of figure 1
+ggplot(rgn.rt.raw, aes(x=rgn, y=rt, group=expect, shape=expect)) +
+  geom_line(stat = "identity", position=position_dodge(width=.3)) +
+  geom_point(stat = "identity", position=position_dodge(width=.3), size=3) +
+  geom_errorbar(aes(ymin = rt-stderr, ymax = rt+stderr), width=.15, position=position_dodge(width=.3)) +
+  scale_shape_manual(name="", labels=c("Expected", "Unexpected"), values = c(21,19)) + 
+  xlab("Word") + ylab("Reading Time (msec)") + 
+  theme_bw()
+
+```
+
+As we can see, response times for the unexpected condition were significantly slower than for the expected condition
+
+Let's see the results in a table so it's a bit easier to compare actual numbers
+
+```{r}
+# Calculate summary statistics for each condition and word position
+library(knitr)
+kable(rgn.rt.raw, format = "markdown")
+
+```
+
+Here, it is easy to see the exact numbers. While some aren't that huge of a difference, it is evident that for certain conditions there is a massive difference in response time.
