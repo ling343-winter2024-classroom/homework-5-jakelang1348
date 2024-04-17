@@ -8,7 +8,7 @@ embed-resources: true
 
 ## Introduction
 
-(TODO insert introduction to the data)
+The idea that language comprehenders predict upcoming words is a popular theory lately. But, testing this has been difficult. This study explores whether the maze task is a useful way to study early cues to prediction during comprehension. A study was conducted using an automated maze task (A-maze). Response times and error rates were analyzed.
 
 ```{r}
 library(tidyverse)
@@ -16,7 +16,6 @@ library(tidytext)
 library(readr)
 library(readxl)
 maze <- read_csv("osfstorage-archive/data/delong maze 40Ss.csv")
-
 
 
 ```
@@ -88,9 +87,7 @@ There were `r num_participants` participants.
 
 ## Data removed
 
-*"Data Analysis*. Item 29 was removed due to a coding error. Regression models for dependent variables (Error Rates, Response Times) were constructed using either the categorical factor (Expectation, sum coded 0.5 \[unexpected\] and –0.5 \[expected\]) or graded by-item noun cloze probabilities (Noun Cloze, centered prior to model fit). Error rates were analyzed using Firth’s penalized likelihood method ([Firth, 1993](https://escholarship.org/uc/item/7dz7z3q3#B6)), using *logistf* ([Heinze, Ploner, & Jiricka, 2020](https://escholarship.org/uc/item/7dz7z3q3#B10)). This analysis was considered more appropriate than mixed-effects logistic regression given the very low error rates.
-
-Words with error responses (including post-error ‘correct’ responses) were removed and the remaining response times for all correct-on-first-attempt words were analyzed by fitting mixed-effects models with maximal random effects using *lme4* ([Barr, et al., 2013](https://escholarship.org/uc/item/7dz7z3q3#B2)) and *p*-values determined by *lmerTest* ([Kuznetsova, Brockhoff, & Christensen, 2017](https://escholarship.org/uc/item/7dz7z3q3#B14)) using the Satterthwaite approximation. Conditional means were derived from the models using *emmeans* ([Lenth, 2021](https://escholarship.org/uc/item/7dz7z3q3#B15)) and difference-adjusted 95% (percentile) mixed-effect-model-based intervals were calculated to account for crossed within-subjects and within-items random effects ([Politzer-Ahles, 2017](https://escholarship.org/uc/item/7dz7z3q3#B23)). Analyses are reported using untransformed RT, though log(RT) revealed similar patterns. Raw data and analysis scripts are available at <https://osf.io/frdtm/>. Additional analyses are reported in the appendix."
+Some data in this dataset must be removed.
 
 ```{r}
 orig_rows = nrow(maze)
@@ -106,7 +103,7 @@ Removed from the dataset were rows for Item 29, which was removed due to a codin
 
 ## Some statistics
 
-Let's print a table showing the mean, min, max, and standard deviation of participant ages.
+Let's print a table showing the mean, min, max, and standard deviation of participant ages to get a better idea of the selected individuals.
 
 ```{r}
 
@@ -125,7 +122,7 @@ Here's the data: `r stats`
 
 ## Figure 1
 
-This figure shows the response times, having removed error and post-error responses. We look to see the response times for the unexpected condition and the expected condition for boht the nouns and the preceding article.
+This figure shows the response times, having removed error and post-error responses. We look to see the response times for the unexpected condition and the expected condition for both the nouns and the preceding article. We would predict that the response times are slower for the unexpected conditions.
 
 ```{r}
 #Create the rt dataset
@@ -184,3 +181,5 @@ library(knitr)
 kable(rgn.rt.raw, format = "markdown")
 
 ```
+
+Here, it is easy to see the exact numbers. While some aren't that huge of a difference, it is evident that for certain conditions there is a massive difference in response time.
